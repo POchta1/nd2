@@ -14,7 +14,7 @@ export default function About() {
       title: "Носитель языка • 10 лет опыта",
       description: "Носитель английского языка из США, магистр образования. Эксперт в области разговорной практики и американского произношения.",
       tags: ["Speaking", "Pronunciation", "TESOL"],
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
     },
     {
       name: "Елена Волкова",
