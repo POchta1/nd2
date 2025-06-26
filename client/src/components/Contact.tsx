@@ -178,13 +178,16 @@ export default function Contact() {
               </div>
             </div>
             
-            {/* Map Placeholder */}
-            <div className="bg-gray-200 rounded-xl h-64 flex items-center justify-center">
-              <div className="text-center text-brand-gray/70">
-                <i className="fas fa-map text-4xl mb-2"></i>
-                <p>Интерактивная карта</p>
-                <p className="text-sm">Google Maps будет здесь</p>
-              </div>
+            {/* Yandex Map */}
+            <div className="bg-gray-200 rounded-xl h-64 overflow-hidden">
+              <iframe
+                src="https://yandex.ru/map-widget/v1/?um=constructor%3A3e9f8c9e7b6d5e8e9f8c9e7b6d5e8e9f8c9e7b6d5e8e&amp;source=constructor"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ borderRadius: '12px' }}
+                title="Яндекс.Карта - Школа Английского"
+              ></iframe>
             </div>
           </motion.div>
           

@@ -99,7 +99,14 @@ This is a full-stack web application for an English language school built with R
 - **Database**: Uses Neon serverless PostgreSQL
 
 ## Changelog
-- June 25, 2025. Initial setup
+- June 26, 2025: Major AI integration and multimedia enhancements
+  - Added video background with American cities (LA, Miami) in hero section
+  - Implemented AI chatbot with OpenAI integration for personalized course recommendations
+  - Replaced Google Maps with Yandex Maps in contact section
+  - Fixed teacher avatar image in About section
+  - Added floating chat button alongside existing phone button
+  - Created intelligent pre-screening flow before AI engagement to save tokens
+- June 25, 2025: Initial setup
 
 ## User Preferences
 

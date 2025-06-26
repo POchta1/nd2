@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function Hero() {
+  const [showVideo, setShowVideo] = useState(false);
+
   const scrollToAbout = () => {
     const aboutSection = document.getElementById('about');
     aboutSection?.scrollIntoView({ behavior: 'smooth' });
@@ -11,17 +14,51 @@ export default function Hero() {
     contactSection?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const openVideo = () => {
+    setShowVideo(true);
+  };
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
+      {/* Video Background */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080" 
-          alt="Modern classroom environment" 
-          className="w-full h-full object-cover opacity-10" 
-        />
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          className="w-full h-full object-cover opacity-20"
+          poster="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080"
+        >
+          <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/90"></div>
       </div>
+
+      {/* Video Modal */}
+      {showVideo && (
+        <motion.div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowVideo(false)}
+        >
+          <div className="relative w-full max-w-4xl mx-4" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowVideo(false)}
+              className="absolute -top-12 right-0 text-white text-2xl hover:text-brand-red transition-colors"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+            <video 
+              controls 
+              autoPlay
+              className="w-full h-auto rounded-lg"
+            >
+              <source src="https://videos.pexels.com/video-files/3571264/3571264-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+            </video>
+          </div>
+        </motion.div>
+      )}
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
@@ -67,6 +104,7 @@ export default function Hero() {
               Начать обучение
             </motion.button>
             <motion.button 
+              onClick={openVideo}
               className="border-2 border-brand-red text-brand-red hover:bg-brand-red hover:text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
