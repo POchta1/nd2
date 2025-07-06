@@ -105,6 +105,9 @@ This is a full-stack web application for an English language school built with R
   - Project running smoothly on port 5000 with all features functional
   - OpenAI API key properly configured in environment variables
   - AI chatbot fully functional and responding in Russian
+  - Added PostgreSQL database with full schema (users, contacts, chat_messages)
+  - Migrated from in-memory storage to database storage
+  - Updated teacher profiles: Added new photo for Anna Smirnova, replaced Michael Johnson with Dmitriy Kozlov
 - June 26, 2025: Major AI integration and multimedia enhancements
   - Added video background with American cities (LA, Miami) in hero section
   - Implemented AI chatbot with OpenAI integration for personalized course recommendations
