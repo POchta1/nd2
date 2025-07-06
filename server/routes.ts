@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import OpenAI from "openai";
+import { storage } from "./storage";
+import { insertContactSchema, insertChatMessageSchema } from "../shared/schema";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
@@ -34,18 +36,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact form submission
   app.post("/api/contact", async (req, res) => {
     try {
-      const validatedData = contactFormSchema.parse(req.body);
+      const validatedData = insertContactSchema.parse(req.body);
       
-      // In a real application, you would:
-      // 1. Save to database
-      // 2. Send email notification
-      // 3. Integrate with CRM system
-      // 4. Send SMS confirmation
+      // Save to database
+      await storage.createContact(validatedData);
       
       console.log("Contact form submission:", validatedData);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       res.json({ 
         success: true, 
@@ -53,6 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
+      console.error("Contact form error:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ 
           success: false, 
@@ -116,6 +113,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const aiResponse = completion.choices[0].message.content || "Извините, не смог обработать ваш запрос.";
+
+      // Save chat message to database
+      await storage.createChatMessage({
+        message,
+        response: aiResponse,
+        userProfile: JSON.stringify(userProfile),
+        step
+      });
 
       res.json({
         message: aiResponse,
