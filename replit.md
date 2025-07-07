@@ -99,6 +99,13 @@ This is a full-stack web application for an English language school built with R
 - **Database**: Uses Neon serverless PostgreSQL
 
 ## Changelog
+- July 7, 2025: Migration to Replit and AI enhancements
+  - Successfully migrated project from Replit Agent to standard Replit environment
+  - Fixed AI chatbot response handling and JSON parsing
+  - Enhanced AI consultant system to conduct full questionnaires autonomously
+  - Added detailed program descriptions with student achievements and school statistics
+  - Improved AI prompting with structured consultation flow
+  - Removed frontend questionnaire logic, delegating all conversation to AI
 - June 26, 2025: Major AI integration and multimedia enhancements
   - Added video background with American cities (LA, Miami) in hero section
   - Implemented AI chatbot with OpenAI integration for personalized course recommendations

@@ -23,7 +23,7 @@ export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
-  const [currentStep, setCurrentStep] = useState("greeting");
+  const [currentStep, setCurrentStep] = useState("ai_mode");
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,7 +34,6 @@ export default function ChatBot() {
       return await response.json();
     },
     onSuccess: (response: any) => {
-      console.log("AI Response received:", response);
       setIsTyping(false);
       addBotMessage(response.message, response.options);
       if (response.step) {
@@ -57,12 +56,14 @@ export default function ChatBot() {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      // Начальное приветствие
+      // AI приветствие
       setTimeout(() => {
-        addBotMessage(
-          "Привет! Я ваш персональный помощник в изучении английского языка. Давайте подберем идеальную программу для вас! Какое обучение вас интересует?",
-          ["Общий английский", "Бизнес-английский", "Для детей", "Подготовка к IELTS", "Индивидуальные занятия", "Разговорный клуб"]
-        );
+        setIsTyping(true);
+        sendMessage.mutate({
+          message: "Начать консультацию",
+          userProfile: {},
+          step: "ai_mode"
+        });
       }, 500);
     }
   }, [isOpen]);
@@ -88,74 +89,12 @@ export default function ChatBot() {
 
   const handleQuickReply = (option: string) => {
     addUserMessage(option);
-    handleLocalResponse(option);
-  };
-
-  const handleLocalResponse = (userInput: string) => {
     setIsTyping(true);
-
-    setTimeout(() => {
-      switch (currentStep) {
-        case "greeting":
-          setUserProfile(prev => ({ ...prev, program: userInput }));
-          setCurrentStep("level");
-          setIsTyping(false);
-          addBotMessage(
-            "Отличный выбор! Какой у вас уровень английского языка?",
-            ["Начинающий (A1)", "Элементарный (A2)", "Средний (B1)", "Выше среднего (B2)", "Продвинутый (C1)", "Не знаю"]
-          );
-          break;
-
-        case "level":
-          setUserProfile(prev => ({ ...prev, level: userInput }));
-          setCurrentStep("age");
-          setIsTyping(false);
-          addBotMessage(
-            "Понятно! Укажите ваш возраст или возрастную группу:",
-            ["5-12 лет", "13-17 лет", "18-25 лет", "26-35 лет", "36-45 лет", "45+ лет"]
-          );
-          break;
-
-        case "age":
-          setUserProfile(prev => ({ ...prev, age: userInput }));
-          setCurrentStep("goals");
-          setIsTyping(false);
-          addBotMessage(
-            "Какие у вас цели в изучении английского?",
-            ["Для работы/карьеры", "Для путешествий", "Для образования", "Для общения", "Для переезда", "Просто интересно"]
-          );
-          break;
-
-        case "goals":
-          setUserProfile(prev => ({ ...prev, goals: userInput }));
-          setCurrentStep("experience");
-          setIsTyping(false);
-          addBotMessage(
-            "Есть ли у вас опыт изучения английского языка?",
-            ["Да, изучал(а) в школе", "Да, занимался(ась) с репетитором", "Да, самостоятельно", "Нет, начинаю с нуля", "Изучал(а) давно, забыл(а)"]
-          );
-          break;
-
-        case "experience":
-          const finalProfile = { ...userProfile, experience: userInput };
-          setUserProfile(finalProfile);
-          setCurrentStep("ai_mode");
-          setIsTyping(false);
-          addBotMessage(
-            `Отлично! Теперь я знаю о вас достаточно. Вам подойдет программа "${finalProfile.program}" для уровня "${finalProfile.level}". У вас есть вопросы о наших курсах? Я помогу вам с выбором!`
-          );
-          break;
-
-        case "ai_mode":
-          // Отправляем запрос к OpenAI с контекстом пользователя
-          sendMessage.mutate({
-            message: userInput,
-            userProfile,
-            step: currentStep
-          });
-          break;
-      }
-    }, 1000);
+    sendMessage.mutate({
+      message: option,
+      userProfile,
+      step: currentStep
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -163,17 +102,12 @@ export default function ChatBot() {
     if (!inputText.trim() || isTyping) return;
 
     addUserMessage(inputText);
-    
-    if (currentStep === "ai_mode") {
-      setIsTyping(true);
-      sendMessage.mutate({
-        message: inputText,
-        userProfile,
-        step: currentStep
-      });
-    } else {
-      handleLocalResponse(inputText);
-    }
+    setIsTyping(true);
+    sendMessage.mutate({
+      message: inputText,
+      userProfile,
+      step: currentStep
+    });
     
     setInputText("");
   };
