@@ -106,6 +106,10 @@ This is a full-stack web application for an English language school built with R
   - Added detailed program descriptions with student achievements and school statistics
   - Improved AI prompting with structured consultation flow
   - Removed frontend questionnaire logic, delegating all conversation to AI
+  - Implemented AI-powered course registration system with PostgreSQL database
+  - Added automatic registration functionality - AI can now register users directly
+  - Created course_registrations table with full student data tracking
+  - Updated teacher photos per user request (replaced Michael Johnson with Dmitry Kozlov)
 - June 26, 2025: Major AI integration and multimedia enhancements
   - Added video background with American cities (LA, Miami) in hero section
   - Implemented AI chatbot with OpenAI integration for personalized course recommendations
