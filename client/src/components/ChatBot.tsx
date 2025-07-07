@@ -30,7 +30,8 @@ export default function ChatBot() {
 
   const sendMessage = useMutation({
     mutationFn: async (data: { message: string; userProfile: UserProfile; step: string }) => {
-      return await apiRequest("POST", "/api/chat", data);
+      const response = await apiRequest("POST", "/api/chat", data);
+      return await response.json();
     },
     onSuccess: (response: any) => {
       console.log("AI Response received:", response);
