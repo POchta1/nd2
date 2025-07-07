@@ -23,23 +23,18 @@ export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
-  const [currentStep, setCurrentStep] = useState("greeting");
-  const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sendMessage = useMutation({
-    mutationFn: async (data: { message: string; userProfile: UserProfile; step: string }) => {
+    mutationFn: async (data: { message: string; conversationHistory: Message[] }) => {
       const response = await apiRequest("POST", "/api/chat", data);
       return await response.json();
     },
     onSuccess: (response: any) => {
       console.log("AI Response received:", response);
       setIsTyping(false);
-      addBotMessage(response.message, response.options);
-      if (response.step) {
-        setCurrentStep(response.step);
-      }
+      addBotMessage(response.message);
     },
     onError: (error) => {
       console.error("AI Chat error:", error);
@@ -58,12 +53,13 @@ export default function ChatBot() {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      // Начальное приветствие
+      // Начальное приветствие от AI
       setTimeout(() => {
-        addBotMessage(
-          "Привет! Я ваш персональный помощник в изучении английского языка. Давайте подберем идеальную программу для вас! Какое обучение вас интересует?",
-          ["Общий английский", "Бизнес-английский", "Для детей", "Подготовка к IELTS", "Индивидуальные занятия", "Разговорный клуб"]
-        );
+        setIsTyping(true);
+        sendMessage.mutate({
+          message: "start_conversation",
+          conversationHistory: []
+        });
       }, 500);
     }
   }, [isOpen]);
@@ -79,84 +75,12 @@ export default function ChatBot() {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const addBotMessage = (text: string, options?: string[]) => {
-    addMessage(text, true, options);
+  const addBotMessage = (text: string) => {
+    addMessage(text, true);
   };
 
   const addUserMessage = (text: string) => {
     addMessage(text, false);
-  };
-
-  const handleQuickReply = (option: string) => {
-    addUserMessage(option);
-    handleLocalResponse(option);
-  };
-
-  const handleLocalResponse = (userInput: string) => {
-    setIsTyping(true);
-
-    setTimeout(() => {
-      switch (currentStep) {
-        case "greeting":
-          setUserProfile(prev => ({ ...prev, program: userInput }));
-          setCurrentStep("level");
-          setIsTyping(false);
-          addBotMessage(
-            "Отличный выбор! Какой у вас уровень английского языка?",
-            ["Начинающий (A1)", "Элементарный (A2)", "Средний (B1)", "Выше среднего (B2)", "Продвинутый (C1)", "Не знаю"]
-          );
-          break;
-
-        case "level":
-          setUserProfile(prev => ({ ...prev, level: userInput }));
-          setCurrentStep("age");
-          setIsTyping(false);
-          addBotMessage(
-            "Понятно! Укажите ваш возраст или возрастную группу:",
-            ["5-12 лет", "13-17 лет", "18-25 лет", "26-35 лет", "36-45 лет", "45+ лет"]
-          );
-          break;
-
-        case "age":
-          setUserProfile(prev => ({ ...prev, age: userInput }));
-          setCurrentStep("goals");
-          setIsTyping(false);
-          addBotMessage(
-            "Какие у вас цели в изучении английского?",
-            ["Для работы/карьеры", "Для путешествий", "Для образования", "Для общения", "Для переезда", "Просто интересно"]
-          );
-          break;
-
-        case "goals":
-          setUserProfile(prev => ({ ...prev, goals: userInput }));
-          setCurrentStep("experience");
-          setIsTyping(false);
-          addBotMessage(
-            "Есть ли у вас опыт изучения английского языка?",
-            ["Да, изучал(а) в школе", "Да, занимался(ась) с репетитором", "Да, самостоятельно", "Нет, начинаю с нуля", "Изучал(а) давно, забыл(а)"]
-          );
-          break;
-
-        case "experience":
-          const finalProfile = { ...userProfile, experience: userInput };
-          setUserProfile(finalProfile);
-          setCurrentStep("ai_mode");
-          setIsTyping(false);
-          addBotMessage(
-            `Отлично! Теперь я знаю о вас достаточно. Вам подойдет программа "${finalProfile.program}" для уровня "${finalProfile.level}". У вас есть вопросы о наших курсах? Я помогу вам с выбором!`
-          );
-          break;
-
-        case "ai_mode":
-          // Отправляем запрос к OpenAI с контекстом пользователя
-          sendMessage.mutate({
-            message: userInput,
-            userProfile,
-            step: currentStep
-          });
-          break;
-      }
-    }, 1000);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -164,17 +88,12 @@ export default function ChatBot() {
     if (!inputText.trim() || isTyping) return;
 
     addUserMessage(inputText);
+    setIsTyping(true);
     
-    if (currentStep === "ai_mode") {
-      setIsTyping(true);
-      sendMessage.mutate({
-        message: inputText,
-        userProfile,
-        step: currentStep
-      });
-    } else {
-      handleLocalResponse(inputText);
-    }
+    sendMessage.mutate({
+      message: inputText,
+      conversationHistory: messages
+    });
     
     setInputText("");
   };
@@ -245,20 +164,7 @@ export default function ChatBot() {
                   }`}>
                     <p className="text-sm">{message.text}</p>
                     
-                    {/* Quick Reply Options */}
-                    {message.isBot && message.options && (
-                      <div className="mt-3 space-y-2">
-                        {message.options.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleQuickReply(option)}
-                            className="block w-full text-left text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+
                   </div>
                 </motion.div>
               ))}
@@ -285,16 +191,14 @@ export default function ChatBot() {
 
             {/* Input */}
             <div className="border-t border-gray-200 p-4">
-              {currentStep === "ai_mode" && (
-                <div className="mb-2 flex space-x-2">
-                  <button
-                    onClick={openContactForm}
-                    className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 transition-colors"
-                  >
-                    Записаться на урок
-                  </button>
-                </div>
-              )}
+              <div className="mb-2 flex space-x-2">
+                <button
+                  onClick={openContactForm}
+                  className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full hover:bg-green-200 transition-colors"
+                >
+                  Записаться на урок
+                </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="flex space-x-2">
                 <input
