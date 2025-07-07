@@ -33,6 +33,7 @@ export default function ChatBot() {
       return await apiRequest("POST", "/api/chat", data);
     },
     onSuccess: (response: any) => {
+      console.log("AI Response received:", response);
       setIsTyping(false);
       addBotMessage(response.message, response.options);
       if (response.step) {
