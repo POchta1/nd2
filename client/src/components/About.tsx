@@ -7,14 +7,14 @@ export default function About() {
       title: "Старший преподаватель • 8 лет опыта",
       description: "Магистр лингвистики, сертифицированный преподаватель CELTA. Специализируется на бизнес-английском и подготовке к международным экзаменам.",
       tags: ["IELTS", "Business", "CELTA"],
-      image: "https://images.unsplash.com/photo-1494790108755-2616b9ad9a8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
     },
     {
-      name: "Майкл Джонсон",
-      title: "Носитель языка • 10 лет опыта",
-      description: "Носитель английского языка из США, магистр образования. Эксперт в области разговорной практики и американского произношения.",
-      tags: ["Speaking", "Pronunciation", "TESOL"],
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
+      name: "Дмитрий Козлов",
+      title: "Преподаватель • 7 лет опыта",
+      description: "Филолог, выпускник МГУ. Специализируется на грамматике и подготовке к ЕГЭ. Прошел стажировку в Великобритании, имеет сертификат TESOL.",
+      tags: ["ЕГЭ", "Grammar", "TESOL"],
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300"
     },
     {
       name: "Елена Волкова",
