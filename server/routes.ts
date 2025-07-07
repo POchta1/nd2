@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import OpenAI from "openai";
+import { db } from "./db";
+import { courseRegistrations, insertRegistrationSchema } from "@shared/schema";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
@@ -22,6 +24,17 @@ const chatMessageSchema = z.object({
     experience: z.string().optional()
   }),
   step: z.string()
+});
+
+const registrationSchema = z.object({
+  name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
+  phone: z.string().min(10, "Введите корректный номер телефона"),
+  email: z.string().email("Введите корректный email").optional().or(z.literal("")),
+  age: z.string(),
+  level: z.string(),
+  goals: z.string(),
+  experience: z.string(),
+  program: z.string()
 });
 
 // Store conversation history (in production, use Redis or database)
@@ -99,12 +112,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // System prompt
       const systemPrompt = `Вы - AI консультант школы английского языка "English Excellence".
 
-ПРАВИЛА ОБЩЕНИЯ:
-- Отвечайте на вопрос пользователя напрямую
-- Не повторяйте одни и те же фразы
-- Если пользователь грубит или пишет неуместное - мягко перенаправьте на тему обучения
-- Если вопрос не связан с английским - вежливо верните к теме школы
-- Узнавайте потребности только если пользователь проявляет интерес к курсам
+ВАШИ ВОЗМОЖНОСТИ:
+- Консультировать по программам обучения
+- Собирать информацию для записи на курсы
+- РЕГИСТРИРОВАТЬ КЛИЕНТОВ на выбранные программы
 
 ПРОГРАММЫ ШКОЛЫ:
 • Общий английский (4500₽/мес) - 95% студентов повышают уровень за 6 месяцев
@@ -114,7 +125,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 • Индивидуальные занятия (1500₽/урок) - результат в 3 раза быстрее
 • Разговорный клуб (2000₽/мес) - 100% преодолевают языковой барьер
 
-Будьте дружелюбны, но профессиональны.`;
+ПРОЦЕСС РЕГИСТРАЦИИ:
+1. Узнайте потребности клиента (возраст, уровень, цели, опыт)
+2. Порекомендуйте подходящую программу
+3. Если клиент хочет записаться - соберите контактные данные:
+   - Имя и фамилию
+   - Номер телефона
+   - Email (необязательно)
+4. Подтвердите все данные
+5. Используйте функцию регистрации для записи клиента
+
+ПРАВИЛА:
+- Ведите естественную беседу
+- Не повторяйте одни и те же фразы
+- Собирайте информацию поэтапно
+- После получения всех данных - регистрируйте клиента
+
+ФУНКЦИИ:
+Если у вас есть все необходимые данные для регистрации, используйте:
+REGISTER_CLIENT{name:"Имя Фамилия", phone:"номер", email:"email", age:"возраст", level:"уровень", goals:"цели", experience:"опыт", program:"программа"}
+
+Будьте дружелюбны и профессиональны.`;
 
       // Build conversation messages
       const messages = [
@@ -136,7 +167,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         temperature: 0.7
       });
 
-      const aiResponse = completion.choices[0].message.content || "Извините, не смог обработать ваш запрос.";
+      let aiResponse = completion.choices[0].message.content || "Извините, не смог обработать ваш запрос.";
+      let registrationResult = null;
+
+      // Check if AI wants to register a client
+      const registerMatch = aiResponse.match(/REGISTER_CLIENT\{([^}]+)\}/);
+      if (registerMatch) {
+        try {
+          // Parse registration data from AI response
+          const regDataStr = registerMatch[1];
+          const regData: any = {};
+          
+          // Simple parsing of key-value pairs
+          regDataStr.split(',').forEach(pair => {
+            const [key, value] = pair.split(':');
+            if (key && value) {
+              regData[key.trim().replace(/"/g, '')] = value.trim().replace(/"/g, '');
+            }
+          });
+
+          // Validate and register
+          const validatedData = registrationSchema.parse(regData);
+          
+          const [registration] = await db
+            .insert(courseRegistrations)
+            .values({
+              ...validatedData,
+              email: validatedData.email || null
+            })
+            .returning();
+
+          console.log("AI registered client:", registration);
+          
+          registrationResult = {
+            success: true,
+            registrationId: registration.id
+          };
+
+          // Remove the REGISTER_CLIENT command from response
+          aiResponse = aiResponse.replace(/REGISTER_CLIENT\{[^}]+\}/, '').trim();
+          
+          // Add success message
+          aiResponse += `\n\n✅ Отлично! Ваша регистрация успешно завершена (№${registration.id}). Наш менеджер свяжется с вами в ближайшее время для подтверждения записи на программу "${registration.program}".`;
+
+        } catch (error) {
+          console.error("AI registration error:", error);
+          aiResponse = aiResponse.replace(/REGISTER_CLIENT\{[^}]+\}/, '').trim();
+          aiResponse += "\n\n❌ Извините, произошла ошибка при регистрации. Пожалуйста, проверьте данные или обратитесь к менеджеру.";
+        }
+      }
 
       // Update conversation history
       history.push({ role: "user", content: message });
@@ -149,7 +228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         message: aiResponse,
-        step: step
+        step: step,
+        registration: registrationResult
       });
 
     } catch (error) {
@@ -164,6 +244,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ 
           message: "Извините, произошла ошибка. Попробуйте еще раз или обратитесь к менеджеру.",
           step: "error"
+        });
+      }
+    }
+  });
+
+  // Course registration endpoint
+  app.post("/api/register", async (req, res) => {
+    try {
+      const validatedData = registrationSchema.parse(req.body);
+      
+      // Save registration to database
+      const [registration] = await db
+        .insert(courseRegistrations)
+        .values({
+          ...validatedData,
+          email: validatedData.email || null
+        })
+        .returning();
+
+      console.log("New course registration:", registration);
+      
+      res.json({
+        success: true,
+        message: "Регистрация успешно завершена! Наш менеджер свяжется с вами в ближайшее время для подтверждения записи.",
+        registrationId: registration.id
+      });
+
+    } catch (error) {
+      console.error("Registration error:", error);
+      
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          success: false,
+          message: "Ошибка валидации данных",
+          errors: error.errors
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Внутренняя ошибка сервера"
         });
       }
     }
