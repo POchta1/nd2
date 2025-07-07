@@ -33,13 +33,15 @@ export default function ChatBot() {
       return await apiRequest("POST", "/api/chat", data);
     },
     onSuccess: (response: any) => {
+      console.log("AI Response received:", response);
       setIsTyping(false);
       addBotMessage(response.message, response.options);
       if (response.step) {
         setCurrentStep(response.step);
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("AI Chat error:", error);
       setIsTyping(false);
       addBotMessage("Извините, произошла ошибка. Попробуйте еще раз.");
     }
